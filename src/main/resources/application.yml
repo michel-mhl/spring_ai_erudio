@@ -1,4 +1,6 @@
 spring:
+  aplication:
+    name: spring-ai-erudio
   ai:
     openai:
-      api-key: ${OPENAI_API_KEY}
+      api-key: ${OPEN_AI_API_KEY}
