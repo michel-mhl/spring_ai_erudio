@@ -8,13 +8,14 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class ChatService {
-     private final ChatModel chatModel;
+    private final ChatModel chatModel;
 
-     public ChatService(ChatModel chatModel) {
-         this.chatModel = chatModel;
-     }
+    public ChatService(ChatModel chatModel) {
+        this.chatModel = chatModel;
+    }
 
     public String getResponse(String prompt) {
+
         return chatModel.call(prompt);
     }
 
