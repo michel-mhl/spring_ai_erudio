@@ -68,10 +68,9 @@ public class GenerativeAIController {
 
         byte[] imageBytes = imageService.generateImageBytes(prompt, quality, n, height, width);
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.IMAGE_PNG);
-        headers.setContentLength(imageBytes.length);
-
-        return new ResponseEntity<>(imageBytes, headers, HttpStatus.OK);
+        return ResponseEntity.ok()
+                .contentType(MediaType.IMAGE_PNG)
+                .contentLength(imageBytes.length)
+                .body(imageBytes);
     }
 }
