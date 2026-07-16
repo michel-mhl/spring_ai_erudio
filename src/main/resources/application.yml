@@ -1,6 +1,13 @@
 spring:
-  aplication:
+  application:
     name: spring-ai-erudio
   ai:
     openai:
       api-key: ${OPEN_AI_API_KEY}
+
+# O 'app' DEVE ficar totalmente alinhado na esquerda, fora do bloco 'spring'
+app:
+  image:
+    base-url: "http://localhost:8080/images/"
+  upload:
+    dir: "uploads/"

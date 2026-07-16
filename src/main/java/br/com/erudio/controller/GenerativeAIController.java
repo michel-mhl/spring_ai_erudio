@@ -3,6 +3,8 @@ package br.com.erudio.controller;
 import br.com.erudio.service.ChatService;
 import br.com.erudio.service.ImageService;
 import br.com.erudio.service.RecipeService;
+import org.springframework.ai.image.ImageResponse;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -13,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("ai")
@@ -21,6 +24,9 @@ public class GenerativeAIController {
     private final ChatService chatService;
     private final RecipeService recipeService;
     private final ImageService imageService;
+
+    @Value("${app.image.base-url}")
+    private String imageBaseUrl;
 
     public GenerativeAIController(ChatService chatService,
                                   RecipeService recipeService,
@@ -48,29 +54,61 @@ public class GenerativeAIController {
         return recipeService.createRecipe(ingredients, cuisine, dietaryRestrictions);
     }
 
+  //  @GetMapping("/generate-image")
+    public ResponseEntity<List<String>> generateImage(
+            @RequestParam String prompt,
+            @RequestParam(defaultValue = "auto") String quality,
+            @RequestParam(defaultValue = "1") Integer n,
+            @RequestParam(defaultValue = "1024") Integer height,
+            @RequestParam(defaultValue = "1024") Integer width) {
+
+        List<String> imagesList = imageService.generateImageBytes(prompt, quality, n, height, width);
+
+        // Retorna a lista de strings com os prefixos diretamente no corpo do JSON
+        return ResponseEntity.ok().body(imagesList);
+    }
+
     @GetMapping("generate-image")
-    public List<String> generateImages(@RequestParam String prompt,
-                                       @RequestParam(defaultValue = "auto") String quality,
-                                       @RequestParam(defaultValue = "1") Integer n,
-                                       @RequestParam(defaultValue = "1024") Integer height,
-                                       @RequestParam(defaultValue = "1024") Integer width) {
+    public ResponseEntity<List<String>> generateSaveImageView(
+            @RequestParam String prompt,
+            @RequestParam(defaultValue = "auto") String quality,
+            @RequestParam(defaultValue = "1") Integer n,
+            @RequestParam(defaultValue = "1024") Integer height,
+            @RequestParam(defaultValue = "1024") Integer width) {
 
-        return imageService.generateImage(prompt, quality, n, height, width);
+        List<String> fileNames = imageService.generateAndSaveImages(prompt, quality, n, height, width);
 
+        List<String> imageUrls = fileNames.stream()
+                .map(name -> imageBaseUrl + name)
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok().body(imageUrls);
     }
-
     @GetMapping("generate-image/view")
-    public ResponseEntity<byte[]> generateImageView(@RequestParam String prompt,
-                                                    @RequestParam(defaultValue = "auto") String quality,
-                                                    @RequestParam(defaultValue = "1") Integer n,
-                                                    @RequestParam(defaultValue = "1024") Integer height,
-                                                    @RequestParam(defaultValue = "1024") Integer width) {
+    public ResponseEntity<List<String>> generateImageView(
+            @RequestParam String prompt,
+            @RequestParam(defaultValue = "auto") String quality,
+            @RequestParam(defaultValue = "1") Integer n,
+            @RequestParam(defaultValue = "1024") Integer height,
+            @RequestParam(defaultValue = "1024") Integer width) {
 
-        byte[] imageBytes = imageService.generateImageBytes(prompt, quality, n, height, width);
+        List<String> imagesBase64 = imageService.generateImageBytes(prompt, quality, n, height, width);
 
-        return ResponseEntity.ok()
-                .contentType(MediaType.IMAGE_PNG)
-                .contentLength(imageBytes.length)
-                .body(imageBytes);
+        // Retorna a lista de imagens dentro de um JSON estruturado
+        return ResponseEntity.ok().body(imagesBase64);
     }
+
+    //gero imagens sem salvar no disco, apenas retorno as urls prontas da OpenAI
+ //   @GetMapping("/generate-image")
+    public ResponseEntity<List<String>> generateImages( @RequestParam String prompt,
+                                                           @RequestParam(defaultValue = "auto") String quality,
+                                                           @RequestParam(defaultValue = "1") Integer n,
+                                                           @RequestParam(defaultValue = "1024") Integer height,
+                                                           @RequestParam(defaultValue = "1024") Integer width) {
+        // Agora o service já devolve as URLs prontas da OpenAI
+        List<String> imageUrls = imageService.generateAndSaveImages(prompt, quality, n, height, width);
+
+        return ResponseEntity.ok().body(imageUrls);
+    }
+
 }
